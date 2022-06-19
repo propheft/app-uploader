@@ -2,31 +2,34 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
+    service.beta.kubernetes.io/aws-load-balancer-name: c1-app-uploader
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  name: c1-app-sec-uploader
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:eu-west-1:155830463620:certificate/6fe2ea09-b71b-4d43-9f5e-cc6294f1dcdc
+  name: c1-app-uploader
   labels:
-    app: c1-app-sec-uploader
+    app: c1-app-uploader
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
-  - port: 80
-    name: c1-app-sec-uploader
+  - port: 443
+    name: c1-app-uploader
     targetPort: 80
-    nodePort: 30103
   selector:
-    app: c1-app-sec-uploader
+    app: c1-app-uploader
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: c1-app-sec-uploader
-  name: c1-app-sec-uploader
+    app: c1-app-uploader
+  name: c1-app-uploader
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: c1-app-sec-uploader
+      app: c1-app-uploader
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -35,17 +38,19 @@ spec:
   template:
     metadata:
       labels:
-        app: c1-app-sec-uploader
+        app: c1-app-uploader
     spec:
       containers:
-      - name: c1-app-sec-uploader
-        image: $K8S_REGISTRY/c1-app-sec-uploader:latest
+      - name: c1-app-uploader
+        image: $K8S_REGISTRY/c1-app-uploader:latest
         imagePullPolicy: Always
         env:
         - name: TREND_AP_KEY
-          value: $APPSEC_KEY
+          value: $UPLOADER_KEY
         - name: TREND_AP_SECRET
-          value: $APPSEC_SECRET
+          value: $UPLOADER_SECRET
+        - name: TREND_AP_HELLO_URL
+          value: "https://agents.de-1.application.cloudone.trendmicro.com/"
         ports:
         - containerPort: 8000
       imagePullSecrets:
